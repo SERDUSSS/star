@@ -80,7 +80,7 @@ impl Client
 
     fn get_stream(&mut self) -> &TcpStream
     {
-        let mut stream: &TcpStream = &self.stream.as_ref().unwrap();
+        let stream: &TcpStream = &self.stream.as_ref().unwrap();
         stream
     }
 
@@ -137,23 +137,21 @@ impl Client
 
     pub fn send(&mut self, data: &str) -> Result<()>
     {
+        // Generate new nonce (Will generate different data with the same key)
+        self.nonce = encryption::aes::generate_nonce()?;
 
-        let asd = data.as_bytes();
-
-        println!("{:?}", asd);
-
+        ////////////////////////////////////////////////////////////////////////////////////////
+        // Encrypt the data with our public key?
         let encrypted_data = self.encrypt(data)
             .expect("Error encrypting data");
 
+        println!("{:?}", encrypted_data);
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////
+        // Send the data over a socket packet
         self.write(encrypted_data)
             .expect("Error sending data");
-
-        let bytes: Vec<u8> = data.as_bytes().to_vec();
-
-        let decrypted_data: String = self.decrypt(bytes)
-            .expect("msg");
-
-        println!("{}", decrypted_data);
 
         Ok(())
     }
@@ -186,6 +184,9 @@ mod tests {
         // Call the connect function
         client.connect("127.0.0.1".to_owned(), 8000 as u16)
             .expect("Could not stablish a connection");
+
+        client.send("hola mundo!, hola mundo!")
+            .expect("Could not send the data");
 
         client.send("hola mundo!")
             .expect("Could not send the data");
