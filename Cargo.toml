@@ -4,3 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+oqs = "*"
+aes-gcm = "*"
+hkdf = "*"
+rand = "*"
+sha2 = "*"
+sha3 = "*"
+anyhow = "*"
+bincode = "*"
+serde = { version = "*", features = ["derive"] }
