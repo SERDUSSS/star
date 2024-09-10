@@ -94,7 +94,7 @@ impl Client
         Ok(encrypted_data)
     }
 
-    fn decrypt(&mut self, data: Vec<u8>) -> Result<String>
+    fn decrypt(&mut self, data: &Vec<u8>) -> Result<String>
     {
         let decrypted_bytes: Vec<u8> = self.cipher.decrypt(&self.nonce, data.as_ref())
             .expect("Decryption failed");
@@ -129,6 +129,8 @@ impl Client
 
         let data: &[u8] = &data;
 
+        //let data: &[u8] = &vec![42; 20753296360];
+
         stream.write_all(data)
             .expect("error");
 
@@ -142,10 +144,13 @@ impl Client
 
         ////////////////////////////////////////////////////////////////////////////////////////
         // Encrypt the data with our public key?
-        let encrypted_data = self.encrypt(data)
+        let encrypted_data: Vec<u8> = self.encrypt(data)
             .expect("Error encrypting data");
 
-        println!("{:?}", encrypted_data);
+        let decrypted_data = self.decrypt(&encrypted_data)
+            .expect("Error decrypting data");
+
+        println!("{}", decrypted_data);
 
 
         /////////////////////////////////////////////////////////////////////////////////////////
