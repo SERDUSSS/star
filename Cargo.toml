@@ -12,4 +12,4 @@ sha2 = "*"
 sha3 = "*"
 anyhow = "*"
 bincode = "*"
-serde = { version = "*", features = ["derive"] }
+serde = { version = "*", features = ["derive", "array"] }
