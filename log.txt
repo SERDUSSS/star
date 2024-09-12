@@ -1,0 +1,144 @@
+   Compiling star v0.1.0 (/home/mar/projects/star)
+warning: unused import: `sha3_256_file`
+ --> src/lib.rs:4:40
+  |
+4 | use encryption::{aes, hash::{sha3_256, sha3_256_file}, kyber1024};
+  |                                        ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `BufReader`, `TcpListener`, `fs::File`, and `path::Path`
+ --> src/lib.rs:8:11
+  |
+8 | use std::{fs::File, path::Path, io::{BufReader, Write}, net::{self, TcpListener, TcpStream}};
+  |           ^^^^^^^^  ^^^^^^^^^^       ^^^^^^^^^                      ^^^^^^^^^^^
+
+warning: constant `CHUNK_SIZE` is never used
+  --> src/lib.rs:13:7
+   |
+13 | const CHUNK_SIZE: usize = 1073741824; // 1 GB
+   |       ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `kem_alg`, `sk`, and `ciphertext` are never read
+  --> src/lib.rs:28:5
+   |
+23 | pub struct Client
+   |            ------ fields in this struct
+...
+28 |     kem_alg: oqs::kem::Kem,
+   |     ^^^^^^^
+29 |     pk: oqs::kem::PublicKey,
+30 |     sk: oqs::kem::SecretKey,
+   |     ^^
+31 |     ciphertext: oqs::kem::Ciphertext,
+   |     ^^^^^^^^^^
+
+warning: `star` (lib) generated 4 warnings (run `cargo fix --lib -p star` to apply 2 suggestions)
+warning: `star` (lib test) generated 4 warnings (4 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.86s
+     Running unittests src/lib.rs (target/debug/deps/star-4b2d5e87d62e4d1f)
+
+running 1 test
+Failed to connect: Connection refused (os error 111)
+thread 'tests::test_connect' panicked at src/lib.rs:117:14:
+Error decrypting without tag: Error
+stack backtrace:
+   0:     0x63fefb5e4fb5 - std::backtrace_rs::backtrace::libunwind::trace::h649ab3318d3445c5
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/../../backtrace/src/backtrace/libunwind.rs:116:5
+   1:     0x63fefb5e4fb5 - std::backtrace_rs::backtrace::trace_unsynchronized::hf4bb60c3387150c3
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/../../backtrace/src/backtrace/mod.rs:66:5
+   2:     0x63fefb5e4fb5 - std::sys::backtrace::_print_fmt::hd9186c800e44bd00
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/sys/backtrace.rs:65:5
+   3:     0x63fefb5e4fb5 - <std::sys::backtrace::BacktraceLock::print::DisplayBacktrace as core::fmt::Display>::fmt::h1b9dad2a88e955ff
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/sys/backtrace.rs:40:26
+   4:     0x63fefb60bacb - core::fmt::rt::Argument::fmt::h351a7824f737a6a0
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/fmt/rt.rs:173:76
+   5:     0x63fefb60bacb - core::fmt::write::h4b5a1270214bc4a7
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/fmt/mod.rs:1182:21
+   6:     0x63fefb5e255f - std::io::Write::write_fmt::hd04af345a50c312d
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/io/mod.rs:1827:15
+   7:     0x63fefb5e67d1 - std::sys::backtrace::BacktraceLock::print::h68d41b51481bce5c
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/sys/backtrace.rs:43:9
+   8:     0x63fefb5e67d1 - std::panicking::default_hook::{{closure}}::h96ab15e9936be7ed
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:269:22
+   9:     0x63fefb5e64ac - std::panicking::default_hook::h3cacb9c27561ad33
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:296:9
+  10:     0x63fefb5e6e31 - std::panicking::rust_panic_with_hook::hfe205f6954b2c97b
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:800:13
+  11:     0x63fefb5e6c97 - std::panicking::begin_panic_handler::{{closure}}::h6cb44b3a50f28c44
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:674:13
+  12:     0x63fefb5e5479 - std::sys::backtrace::__rust_end_short_backtrace::hf1c1f2a92799bb0e
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/sys/backtrace.rs:168:18
+  13:     0x63fefb5e6924 - rust_begin_unwind
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:665:5
+  14:     0x63fefb330cc3 - core::panicking::panic_fmt::h3d8fc78294164da7
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/panicking.rs:74:14
+  15:     0x63fefb3311d6 - core::result::unwrap_failed::hfa79a499befff387
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/result.rs:1679:5
+  16:     0x63fefb33e1ce - core::result::Result<T,E>::expect::h61b7a072232909c4
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/result.rs:1059:23
+  17:     0x63fefb3347f7 - star::Client::decrypt_tagless::hd30805031bff3eee
+                               at /home/mar/projects/star/src/lib.rs:116:9
+  18:     0x63fefb33d01a - star::tests::test_connect::haf537f392ac76946
+                               at /home/mar/projects/star/src/lib.rs:318:17
+  19:     0x63fefb348397 - star::tests::test_connect::{{closure}}::h8dfae1ad559c2664
+                               at /home/mar/projects/star/src/lib.rs:307:22
+  20:     0x63fefb3376b6 - core::ops::function::FnOnce::call_once::h6c4bcaa84833a709
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/ops/function.rs:250:5
+  21:     0x63fefb38770b - core::ops::function::FnOnce::call_once::h81f56a195fe4862e
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/ops/function.rs:250:5
+  22:     0x63fefb38770b - test::__rust_begin_short_backtrace::h919c79c8b896f9e2
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/test/src/lib.rs:624:18
+  23:     0x63fefb386fb5 - test::run_test_in_process::{{closure}}::h7b3d5751c5b4dd75
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/test/src/lib.rs:647:60
+  24:     0x63fefb386fb5 - <core::panic::unwind_safe::AssertUnwindSafe<F> as core::ops::function::FnOnce<()>>::call_once::hdabd61465e4dbd80
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/panic/unwind_safe.rs:272:9
+  25:     0x63fefb386fb5 - std::panicking::try::do_call::hc813c79fd64b0a90
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:557:40
+  26:     0x63fefb386fb5 - std::panicking::try::h055c5de7e7bfc209
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:521:19
+  27:     0x63fefb386fb5 - std::panic::catch_unwind::h4265d6525195c807
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panic.rs:350:14
+  28:     0x63fefb386fb5 - test::run_test_in_process::he72c277a35f96567
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/test/src/lib.rs:647:27
+  29:     0x63fefb386fb5 - test::run_test::{{closure}}::h974e632522c0fbcf
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/test/src/lib.rs:568:43
+  30:     0x63fefb34efa4 - test::run_test::{{closure}}::hdc2c89ce8b601dda
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/test/src/lib.rs:598:41
+  31:     0x63fefb34efa4 - std::sys::backtrace::__rust_begin_short_backtrace::h342cb8e53aeb2076
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/sys/backtrace.rs:152:18
+  32:     0x63fefb3526d2 - std::thread::Builder::spawn_unchecked_::{{closure}}::{{closure}}::h67b1b5c1709ad95b
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/thread/mod.rs:538:17
+  33:     0x63fefb3526d2 - <core::panic::unwind_safe::AssertUnwindSafe<F> as core::ops::function::FnOnce<()>>::call_once::hd8c7a030ea8b7676
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/panic/unwind_safe.rs:272:9
+  34:     0x63fefb3526d2 - std::panicking::try::do_call::h512c2ab2c15b7d31
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:557:40
+  35:     0x63fefb3526d2 - std::panicking::try::h5c2903f8937bc868
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panicking.rs:521:19
+  36:     0x63fefb3526d2 - std::panic::catch_unwind::h242c80217c2dbece
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/panic.rs:350:14
+  37:     0x63fefb3526d2 - std::thread::Builder::spawn_unchecked_::{{closure}}::h6cb4494ebdd8caf7
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/thread/mod.rs:537:30
+  38:     0x63fefb3526d2 - core::ops::function::FnOnce::call_once{{vtable.shim}}::h42193b008049ba94
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/core/src/ops/function.rs:250:5
+  39:     0x63fefb5eb25b - <alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once::ha1963004222e7822
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/alloc/src/boxed.rs:2070:9
+  40:     0x63fefb5eb25b - <alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once::h1086ced1f7c494c2
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/alloc/src/boxed.rs:2070:9
+  41:     0x63fefb5eb25b - std::sys::pal::unix::thread::Thread::new::thread_start::ha8af9c992ef0b208
+                               at /rustc/eeb90cda1969383f56a2637cbd3037bdf598841c/library/std/src/sys/pal/unix/thread.rs:108:17
+  42:     0x756d629b439d - <unknown>
+  43:     0x756d62a3949c - <unknown>
+  44:                0x0 - <unknown>
+test tests::test_connect ... FAILED
+
+failures:
+
+failures:
+    tests::test_connect
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `--lib`

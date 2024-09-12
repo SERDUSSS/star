@@ -5,11 +5,13 @@ edition = "2021"
 
 [dependencies]
 oqs = "*"
-aes-gcm = "*"
+aes = "*"
 hkdf = "*"
 rand = "*"
 sha2 = "*"
 sha3 = "*"
 anyhow = "*"
 bincode = "*"
-serde = { version = "*", features = ["derive", "array"] }
+serde = { version = "^1.0.210", features = ["derive"] }
+ctr = "*"
+generic-array = "*"

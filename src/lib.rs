@@ -1,16 +1,18 @@
-use aes_gcm::Aes256Gcm;
-use aes_gcm::aead::Aead;
-use aes_gcm::aead::generic_array::GenericArray;
-use encryption::{aes, hash::sha3_256, kyber1024};
+use ::aes::Aes256;
+use generic_array::GenericArray;
+use encryption::{aes, hash::{sha3_256, sha3_256_file}, kyber1024};
 use oqs::kem::PublicKey;
 use sha2::digest::consts::U12;
 use anyhow::Result;
-use std::{io::Write, net::{self, TcpListener, TcpStream}};
+use std::{fs::File, path::Path, io::{BufReader, Write}, net::{self, TcpListener, TcpStream}};
+use ctr::Ctr128BE;
+
+pub type Aes256Ctr = Ctr128BE<Aes256>; // Define AES-CTR type using AES-256
 
 // MAX SIZE CAPABLE OF SENDING PER PACKET: 20753296360 Bytes (19.328014351 GB)
 // MAX REDIRECTABLE SIZE: 1360067276952600 Bytes (1.360067276952600102 PB)
 
-const CHUNK_SIZE: usize = 1 * 1024 * 1024 * 1024; // 1 GB
+const CHUNK_SIZE: usize = 1073741824; // 1 GB
 
 pub mod encryption {
     pub mod aes;
@@ -19,7 +21,6 @@ pub mod encryption {
 }
 
 pub mod packets;
-pub mod packet_handler;
 
 pub struct Client
 {
@@ -30,7 +31,7 @@ pub struct Client
     pk: oqs::kem::PublicKey,
     sk: oqs::kem::SecretKey,
     ciphertext: oqs::kem::Ciphertext,
-    cipher: Aes256Gcm,
+    cipher: Aes256Ctr,
     nonce: GenericArray<u8, U12>
 }
 
@@ -41,7 +42,7 @@ impl Client
     {
         oqs::init();
 
-        let host: String = "0.0.0.0".to_owned(); 
+        let host: String = "127.0.0.1".to_owned(); 
 
         let port: u16 = 65535;
 
@@ -70,7 +71,7 @@ impl Client
 
     fn get_stream(&mut self) -> &TcpStream
     {
-        let stream: &TcpStream = &self.stream.as_ref().unwrap();
+        let stream: &TcpStream = self.stream.as_ref().unwrap();
         stream
     }
 
@@ -80,17 +81,14 @@ impl Client
         pk
     }
 
-    fn encrypt(&mut self, data: &str) -> Result<Vec<u8>>
+    pub fn encrypt(&mut self, data: &str) -> Result<Vec<u8>>
     {
-        let plaintext: &[u8] = data.as_bytes();
+        self.cipher.apply_keystream(data);
 
-        let encrypted_data: Vec<u8> = self.cipher.encrypt(&self.nonce, plaintext.as_ref())
-            .expect("Encryption failed");
-        
         Ok(encrypted_data)
     }
 
-    fn decrypt(&mut self, data: &Vec<u8>) -> Result<String>
+    pub fn decrypt(&mut self, data: &Vec<u8>) -> Result<String>
     {
         let decrypted_bytes: Vec<u8> = self.cipher.decrypt(&self.nonce, data.as_ref())
             .expect("Decryption failed");
@@ -169,70 +167,85 @@ impl Client
 
         stream.write_all(data)?;
         stream.write_all(data)?;*/
-
-        let data: &[u8] = &data;
         
-        //     Req Type (1 byte) + Keep_alive (1 byte) + Nonce length (12 bytes)
+        //     Req Type (1 byte) + Nonce length (12 bytes)
         //     All data (Unknown) + SHA3-256 (32 bytes)
-        let size: u64 = (1 + 1 + 12 + data.len() + 32) as u64;
+        let size: u64 = (1 + 1 + 12 + encrypted_data.len() + 32) as u64;
         
-        let hash: &[u8] = &sha3_256(data.to_vec());
+        let hash: &[u8] = &sha3_256(data.as_bytes().to_vec());
 
-        let packet: packets::Stream = packets::Stream {
-            length: &size.to_be_bytes(),
-            req_type: 1,
-            keep_alive: true,
-            nonce: nonce,
-            data: data,
-            hash: hash,
-        };
+        // Size
+        stream.write_all(&size.to_be_bytes())?;
 
-        stream.write_all(bincode::serialize(&packet))?;
+        // Req type
+        stream.write_all(&[1_u8])?;
+
+        // Sha3-256 hash
+        stream.write_all(hash)?;
+
+        // Nonce
+        stream.write_all(nonce.as_slice())?;
+
+        // Encrypted data
+        stream.write_all(&encrypted_data)?;
 
         Ok(())
     }
 
-    pub fn send_file(&mut self, file: &str) -> Result<()>
+    /*pub fn send_file(&mut self, filepath: &str) -> Result<()>
     {
         // Generate new nonce
         let nonce: GenericArray<u8, U12> = encryption::aes::generate_nonce()?;
         self.nonce = nonce;
 
-        // Encrypt the data with our shared secret
-        let encrypted_data: Vec<u8> = self.encrypt(data)
-            .expect("Error encrypting data");
-
-        println!("{}", data);
+        let filename = Path::new(filepath).file_name().unwrap().to_str().unwrap();
 
         let mut stream: &TcpStream = self.get_stream();
-
-        /*let data: &[u8] = &vec![42; 11000000000];
-
-        stream.write_all(data)?;
-        stream.write_all(data)?;*/
-
-        let data: &[u8] = &data;
         
-        //     Req Type (1 byte) + Keep_alive (1 byte) + Nonce length (12 bytes)
+        //     Req Type (1 byte) +  Nonce length (12 bytes)
         //     All data (Unknown) + SHA3-256 (32 bytes)
-        let size: u64 = (1 + 1 + 12 + data.len() + 32) as u64;
+        let size: u64 = (1 + 12 + data.len() + 32) as u64; ///////////////////////////////////////
         
-        let hash: &[u8] = &sha3_256(data.to_vec());
+        let hash: &[u8] = &sha3_256_file(filepath);
 
-        let packet: packets::FileStream = packets::FileStream {
-            length: &size.to_be_bytes(),
-            req_type: 1,
-            keep_alive: true,
-            filename: file,
-            nonce: nonce,
-            data: data,
-            hash: hash,
-        };
+        stream.write_all(&size.to_be_bytes())?;
 
-        stream.write_all(bincode::serialize(&packet))?;
+        stream.write_all(&[2_u8])?;
+
+        stream.write_all(filename.as_bytes())?;
+
+        stream.write_all(nonce.as_slice())?;
+
+        stream.write_all(hash)?;
+
+        let file = File::open(filepath)?;
+        let mut reader = BufReader::with_capacity(CHUNK_SIZE, file);
+        let mut buffer = vec![0u8; CHUNK_SIZE];
+    
+        // Read the file and send it chunk by chunk
+
+
+
+        loop {
+            // Read a chunk of data
+            let bytes_read = reader.read(&mut buffer)?;
+
+            // If no more data is left to read, break out of the loop
+            if bytes_read == 0 {
+                break;
+            }
+
+            let encrypted_data: Vec<u8> = self.encrypt(bytes_read)
+                .expect("Error encrypting data");
+
+            let encrypted_data: &[u8] = &encrypted_data;
+    
+            // Send the chunk over the network
+            stream.write_all(&buffer[..bytes_read])?;
+        }
 
         Ok(())
-    }
+    }*/ 
 
     pub fn receive(&mut self) -> Result<[u8; 64000]>
     {
@@ -252,16 +265,17 @@ impl Client
 
 
 
-pub struct Server
-{
-    host: String,
-    port: u16,
-    stream: Option<net::TcpStream>,
-    kem_alg: oqs::kem::Kem,
-    ciphertext: oqs::kem::Ciphertext,
-    cipher: Aes256Gcm,
-    nonce: GenericArray<u8, U12>
-}
+// pub struct Server
+// {
+//     host: String,
+//     port: u16,
+//     stream: Option<net::TcpStream>,
+//     kem_alg: oqs::kem::Kem,
+//     ciphertext: oqs::kem::Ciphertext,
+//     cipher: Aes256Gcm,
+//     nonce: GenericArray<u8, U12>
+// }
+
 #[cfg(test)]
 mod tests {
     use super::*; // Import everything from the parent module
@@ -275,7 +289,8 @@ mod tests {
         client.connect("127.0.0.1".to_owned(), 8000 as u16)
             .expect("Could not stablish a connection");
 
-        client.send("hola mundo!, hola mundo!")
-            .expect("Could not send the data");
+        let x = client.encrypt("asd")
+            .expect("Error");
+
     }
 }
