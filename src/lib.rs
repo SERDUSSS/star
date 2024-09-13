@@ -1,13 +1,11 @@
-use ::aes::Aes256;
-use generic_array::GenericArray;
+use aes_gcm::aead::AeadMutInPlace;
+use aes_gcm::{Aes256Gcm, Key, Nonce, Tag};
+use aes_gcm::aead::{Aead, NewAead, generic_array::GenericArray};
 use encryption::{aes, hash::{sha3_256, sha3_256_file}, kyber1024};
 use oqs::kem::PublicKey;
 use sha2::digest::consts::U12;
 use anyhow::Result;
 use std::{fs::File, path::Path, io::{BufReader, Write}, net::{self, TcpListener, TcpStream}};
-use ctr::Ctr128BE;
-
-pub type Aes256Ctr = Ctr128BE<Aes256>; // Define AES-CTR type using AES-256
 
 // MAX SIZE CAPABLE OF SENDING PER PACKET: 20753296360 Bytes (19.328014351 GB)
 // MAX REDIRECTABLE SIZE: 1360067276952600 Bytes (1.360067276952600102 PB)
@@ -31,7 +29,7 @@ pub struct Client
     pk: oqs::kem::PublicKey,
     sk: oqs::kem::SecretKey,
     ciphertext: oqs::kem::Ciphertext,
-    cipher: Aes256Ctr,
+    cipher: Aes256Gcm,
     nonce: GenericArray<u8, U12>
 }
 
@@ -42,7 +40,7 @@ impl Client
     {
         oqs::init();
 
-        let host: String = "127.0.0.1".to_owned(); 
+        let host: String = "0.0.0.0".to_owned(); 
 
         let port: u16 = 65535;
 
@@ -83,9 +81,24 @@ impl Client
 
     pub fn encrypt(&mut self, data: &str) -> Result<Vec<u8>>
     {
-        self.cipher.apply_keystream(data);
+        let plaintext: &[u8] = data.as_bytes();
+
+        let encrypted_data: Vec<u8> = self.cipher.encrypt(&self.nonce, plaintext.as_ref())
+            .expect("Encryption failed");
 
         Ok(encrypted_data)
+    }
+
+    pub fn encrypt_tagless(&mut self, data: &str) -> Result<Vec<u8>>
+    {
+        let mut data: Vec<u8> = data.as_bytes().to_vec();
+
+        let plaintext: &mut [u8] = &mut data;
+
+        self.cipher.encrypt_in_place_detached(&self.nonce, &[], plaintext)
+            .expect("Encryption failed").to_vec();
+
+        Ok(data)
     }
 
     pub fn decrypt(&mut self, data: &Vec<u8>) -> Result<String>
@@ -94,6 +107,36 @@ impl Client
             .expect("Decryption failed");
 
         let decrypted_data = String::from_utf8(decrypted_bytes)
+            .expect("Could not parse to utf-8");
+        
+        Ok(decrypted_data)
+    }
+
+    fn verify_and_get_tag(
+        &mut self,
+        encrypted_data: &[u8],
+        aad: &[u8],
+    ) -> Vec<u8>
+    {
+        let cipher = self.cipher;
+        let nonce = self.nonce;
+        
+        let (ciphertext, tag) = cipher
+        .encrypt_detached(nonce, plaintext)
+        .expect("Encryption failed");
+
+        (ciphertext.to_vec(), tag)
+    }
+
+    pub fn decrypt_tagless(&mut self, mut encrypted_data: Vec<u8>) -> Result<String>
+    {
+
+        let ciphertext: &mut [u8] = &mut encrypted_data;
+
+        self.cipher.decrypt_in_place_detached(&self.nonce, &[], ciphertext, tag)
+            .expect("Error decrypting without tag");
+
+        let decrypted_data: String = String::from_utf8(encrypted_data)
             .expect("Could not parse to utf-8");
         
         Ok(decrypted_data)
@@ -289,8 +332,12 @@ mod tests {
         client.connect("127.0.0.1".to_owned(), 8000 as u16)
             .expect("Could not stablish a connection");
 
-        let x = client.encrypt("asd")
+        let x = client.encrypt_tagless("asd")
             .expect("Error");
 
+        let y = client.decrypt_tagless(x)
+            .expect("Error2");
+
+        println!("{}", y);
     }
 }
