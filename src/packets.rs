@@ -2,7 +2,7 @@
 /*
     Request types:
         1 -> Stream (Data)
-        2 -> FileStream (Files)    
+        2 -> FileStream (Files)
  */
 
 pub struct Stream
