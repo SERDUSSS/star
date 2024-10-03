@@ -1,7 +1,22 @@
+use thiserror::Error;
 use generic_array::GenericArray;
-use aes::cipher::KeyInit;
+use aes::cipher::{BlockDecrypt, BlockEncrypt, KeyInit};
 use aes::Aes256;
-use oqs::{kem::{Ciphertext, Kem, PublicKey, SecretKey, SharedSecret}, Error};
+use oqs::kem::{Ciphertext, Kem, PublicKey, SecretKey, SharedSecret};
+
+const CHUNK_SIZE: usize = 16;
+
+#[derive(Error, Debug)]
+pub enum EncryptError {
+    #[error("Encryption error")]
+    EncryptionError,
+}
+
+#[derive(Error, Debug)]
+pub enum DecryptError {
+    #[error("Decryption error")]
+    DecryptionError,
+}
 
 pub fn generate_cipher(
     kem_alg: &Kem,
@@ -21,12 +36,38 @@ pub fn generate_cipher(
     Ok((ciphertext, cipher))
 }
 
-pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, Error>
-{
-    Ok(vec![])
+pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, EncryptError> {
+
+    if text.len() % CHUNK_SIZE != 0 {
+        return Err(EncryptError::EncryptionError);
+    }
+
+    let mut encrypted_data = Vec::with_capacity(text.len());
+
+    for chunk in text.chunks(CHUNK_SIZE) {
+
+        let mut block = GenericArray::clone_from_slice(chunk); // Create a mutable copy
+        cipher.encrypt_block(&mut block);
+        encrypted_data.extend_from_slice(&block);
+    }
+
+    Ok(encrypted_data)
 }
 
-pub fn decrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, Error>
-{
-    Ok(vec![])
+pub fn decrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, DecryptError> {
+
+    if text.len() % CHUNK_SIZE != 0 {
+        return Err(DecryptError::DecryptionError);
+    }
+
+    let mut decrypted_data = Vec::with_capacity(text.len());
+
+    for chunk in text.chunks(CHUNK_SIZE) {
+
+        let mut block = GenericArray::clone_from_slice(chunk); // Create a mutable copy
+        cipher.decrypt_block(&mut block);
+        decrypted_data.extend_from_slice(&block);
+    }
+
+    Ok(decrypted_data)
 }

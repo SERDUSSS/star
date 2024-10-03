@@ -11,8 +11,8 @@ pub mod encryption {
 pub struct Client {
     pub host: String,                      // The remote host
     pub port: u16,                         // The remote port
-    pub stream: Option<net::TcpStream>,       // TCP stream for communication
-    pub kem_alg: oqs::kem::Kem,            // The KEM algorithm used, e.g., "Kyber1024"
+    pub stream: Option<net::TcpStream>,    // TCP stream for communication
+    pub kem_alg: oqs::kem::Kem,            // The KEM algorithm used, Kyber1024
     pub pk: oqs::kem::PublicKey,           // Public key for post-quantum encryption
     pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption
     pub cipher: Aes256,                    // AES256 encryption key
