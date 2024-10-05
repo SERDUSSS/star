@@ -49,21 +49,19 @@ fn pad(data: &[u8], block_size: usize) -> Vec<u8> {
 }
 
 pub fn decrypt(cipher: &Aes256, encrypted_data: &[u8]) -> Result<Vec<u8>, errors::DecryptError> {
-    // Ensure input length is a multiple of CHUNK_SIZE (block size)
+
     if encrypted_data.len() % CHUNK_SIZE != 0 {
         return Err(errors::DecryptError::DecryptionError);
     }
     
     let mut decrypted_data = Vec::with_capacity(encrypted_data.len());
 
-    // Decrypt each block
     for chunk in encrypted_data.chunks(CHUNK_SIZE) {
         let mut block = GenericArray::clone_from_slice(chunk); // The chunk size will always be 16
         cipher.decrypt_block(&mut block);
         decrypted_data.extend_from_slice(&block);
     }
 
-    // Remove PKCS7 padding after decryption
     unpad(&mut decrypted_data).map_err(|_| errors::DecryptError::DecryptionError)?;
 
     Ok(decrypted_data)
