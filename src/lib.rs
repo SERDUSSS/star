@@ -55,13 +55,8 @@ impl Client {
 
         self.stream = Some(stream);
 
-        let buf: &[u8] = b"Hello world!"; 
-
-        let data: &[u8] = &aes::encrypt(&self.cipher, buf).unwrap();
-
-        self.stream.as_mut().unwrap().write_all(data)
-            .expect("Could not send data");
-
+        self.kem();
+        
         Ok(())
     }
 
@@ -69,8 +64,22 @@ impl Client {
     {
         let ebuf: &[u8] = &aes::encrypt(&self.cipher, buf).unwrap();
 
+        let buflength: &[u8] = &ebuf.len().to_ne_bytes();
+
+        let bufhash: &[u8] = &hash::sha3_256(ebuf);
+
+        self.stream.as_mut().unwrap().write_all(buflength)
+            .expect("Could not send data length");
+
         self.stream.as_mut().unwrap().write_all(ebuf)
             .expect("Could not send data");
+
+        self.stream.as_mut().unwrap().write_all(bufhash)
+            .expect("Could not send hash");
+
+        // send hash
+
+        // println!("{}", String::from_utf8(aes::decrypt(&self.cipher, ebuf).unwrap()).unwrap());
 
         Ok(())
     }
@@ -90,10 +99,11 @@ mod tests {
         let mut client = Client::new()
             .expect("Could not create");
 
-        // Call the connect function
         client.connect("127.0.0.1:8001".to_owned())
             .expect("Could not stablish a connection");
 
-        client.send(b"Esto es una prueba");
+        let buf: &[u8] = &[0; 1000];
+
+        client.send(buf);
     }
 }
