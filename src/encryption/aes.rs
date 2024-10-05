@@ -1,22 +1,11 @@
-use thiserror::Error;
 use generic_array::GenericArray;
 use aes::cipher::{BlockDecrypt, BlockEncrypt, KeyInit};
 use aes::Aes256;
 use oqs::kem::{Ciphertext, Kem, PublicKey, SecretKey, SharedSecret};
 
+use crate::errors;
+
 const CHUNK_SIZE: usize = 16;
-
-#[derive(Error, Debug)]
-pub enum EncryptError {
-    #[error("Encryption error")]
-    EncryptionError,
-}
-
-#[derive(Error, Debug)]
-pub enum DecryptError {
-    #[error("Decryption error")]
-    DecryptionError,
-}
 
 pub fn generate_cipher(
     kem_alg: &Kem,
@@ -36,10 +25,10 @@ pub fn generate_cipher(
     Ok((ciphertext, cipher))
 }
 
-pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, EncryptError> {
+pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, errors::EncryptError> {
 
     if text.len() % CHUNK_SIZE != 0 {
-        return Err(EncryptError::EncryptionError);
+        return Err(errors::EncryptError::EncryptionError);
     }
 
     let mut encrypted_data = Vec::with_capacity(text.len());
@@ -54,10 +43,10 @@ pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, EncryptError> {
     Ok(encrypted_data)
 }
 
-pub fn decrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, DecryptError> {
+pub fn decrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, errors::DecryptError> {
 
     if text.len() % CHUNK_SIZE != 0 {
-        return Err(DecryptError::DecryptionError);
+        return Err(errors::DecryptError::DecryptionError);
     }
 
     let mut decrypted_data = Vec::with_capacity(text.len());

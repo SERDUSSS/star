@@ -2,6 +2,8 @@ use ::aes::Aes256;
 use encryption::{aes, kyber1024, hash};
 use std::net;
 pub mod packets;
+pub mod errors;
+
 pub mod encryption {
     pub mod aes;
     pub mod kyber1024;
@@ -19,17 +21,17 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new() -> Result<Self, oqs::Error> {
+    pub fn new() -> Result<Self, errors::ErrorGeneratingSecureKeys> {
         oqs::init();
 
-        let host: String = "0.0.0.0".to_owned(); 
+        let host: String = "0.0.0.0".to_owned();
         let port: u16 = 65535;
 
         let (kem_alg, pk, sk) = kyber1024::generate_keys()
-            .expect("Error generating keypair");
+            .expect("Error generating Kyber1024 keypair");
 
         let (ciphertext, cipher) = aes::generate_cipher(&kem_alg, &pk, &sk)
-            .expect("Error generating cipher");
+            .expect("Error generating AES256 cipher");
 
         Ok(Client
             {
@@ -43,29 +45,26 @@ impl Client {
             })
     }
 
-    /*pub fn encrypt(&mut self, data: &str) -> Result<Vec<u8>>
+    
+    fn send_pk(&mut self) -> Result<(), errors::SendPKError>
     {
+        Ok(())
     }
 
-    pub fn decrypt(&mut self, data: &[u8]) -> Result<String>
+    pub fn connect(&mut self, host: String, port: u16) -> Result<(), errors::HandShakeError>
     {
+        Ok(())
     }
 
-    fn send_pk(&mut self) -> Result<()>
+    pub fn send(&mut self, data: &str) -> Result<(), errors::ErrorSendingData>
     {
+        Ok(())
     }
 
-    pub fn connect(&mut self, host: String, port: u16) -> Result<()>
+    pub fn receive(&mut self) -> Result<[u8; 64000], errors::ErrorReceivingData>
     {
+        Ok(())
     }
-
-    pub fn send(&mut self, data: &str) -> Result<()>
-    {
-    }
-
-    pub fn receive(&mut self) -> Result<[u8; 64000]>
-    {
-    }*/
 }
 
 /*#[cfg(test)]
