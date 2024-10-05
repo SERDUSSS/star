@@ -27,36 +27,62 @@ pub fn generate_cipher(
 
 pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, errors::EncryptError> {
 
-    if text.len() % CHUNK_SIZE != 0 {
-        return Err(errors::EncryptError::EncryptionError);
-    }
+    let padded_text: Vec<u8> = pad(text, CHUNK_SIZE);
+    
+    let mut encrypted_data: Vec<u8> = Vec::with_capacity(padded_text.len());
 
-    let mut encrypted_data = Vec::with_capacity(text.len());
-
-    for chunk in text.chunks(CHUNK_SIZE) {
-
-        let mut block = GenericArray::clone_from_slice(chunk); // Create a mutable copy
+    for chunk in padded_text.chunks(CHUNK_SIZE) {
+        let mut block: GenericArray<u8, _> = GenericArray::clone_from_slice(chunk); // Now chunk size will always be 16
         cipher.encrypt_block(&mut block);
         encrypted_data.extend_from_slice(&block);
     }
-
+    
     Ok(encrypted_data)
 }
 
-pub fn decrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, errors::DecryptError> {
+fn pad(data: &[u8], block_size: usize) -> Vec<u8> {
+    let padding_len = block_size - (data.len() % block_size);
+    let mut padded_data = Vec::with_capacity(data.len() + padding_len);
+    padded_data.extend_from_slice(data);
+    padded_data.extend(vec![padding_len as u8; padding_len]);
+    padded_data
+}
 
-    if text.len() % CHUNK_SIZE != 0 {
+pub fn decrypt(cipher: &Aes256, encrypted_data: &[u8]) -> Result<Vec<u8>, errors::DecryptError> {
+    // Ensure input length is a multiple of CHUNK_SIZE (block size)
+    if encrypted_data.len() % CHUNK_SIZE != 0 {
         return Err(errors::DecryptError::DecryptionError);
     }
+    
+    let mut decrypted_data = Vec::with_capacity(encrypted_data.len());
 
-    let mut decrypted_data = Vec::with_capacity(text.len());
-
-    for chunk in text.chunks(CHUNK_SIZE) {
-
-        let mut block = GenericArray::clone_from_slice(chunk); // Create a mutable copy
+    // Decrypt each block
+    for chunk in encrypted_data.chunks(CHUNK_SIZE) {
+        let mut block = GenericArray::clone_from_slice(chunk); // The chunk size will always be 16
         cipher.decrypt_block(&mut block);
         decrypted_data.extend_from_slice(&block);
     }
 
+    // Remove PKCS7 padding after decryption
+    unpad(&mut decrypted_data).map_err(|_| errors::DecryptError::DecryptionError)?;
+
     Ok(decrypted_data)
+}
+
+fn unpad(data: &mut Vec<u8>) -> Result<(), ()> {
+    if let Some(&pad_byte) = data.last() {
+        let pad_len = pad_byte as usize;
+        if pad_len == 0 || pad_len > CHUNK_SIZE || pad_len > data.len() {
+            return Err(()); // Invalid padding
+        }
+        // Check that the padding bytes are valid
+        if data[data.len() - pad_len..].iter().all(|&byte| byte == pad_byte) {
+            data.truncate(data.len() - pad_len); // Remove padding
+            Ok(())
+        } else {
+            Err(()) // Invalid padding bytes
+        }
+    } else {
+        Err(()) // Data is empty, can't unpad
+    }
 }

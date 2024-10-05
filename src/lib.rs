@@ -1,6 +1,6 @@
 use ::aes::Aes256;
 use encryption::{aes, kyber1024, hash};
-use std::net;
+use std::{io::Write, net::{self, TcpStream}};
 pub mod packets;
 pub mod errors;
 
@@ -12,7 +12,6 @@ pub mod encryption {
 
 pub struct Client {
     pub host: String,                      // The remote host
-    pub port: u16,                         // The remote port
     pub stream: Option<net::TcpStream>,    // TCP stream for communication
     pub kem_alg: oqs::kem::Kem,            // The KEM algorithm used, Kyber1024
     pub pk: oqs::kem::PublicKey,           // Public key for post-quantum encryption
@@ -25,7 +24,6 @@ impl Client {
         oqs::init();
 
         let host: String = "0.0.0.0".to_owned();
-        let port: u16 = 65535;
 
         let (kem_alg, pk, sk) = kyber1024::generate_keys()
             .expect("Error generating Kyber1024 keypair");
@@ -36,7 +34,6 @@ impl Client {
         Ok(Client
             {
                 host,
-                port,
                 stream: None,
                 kem_alg,
                 pk,
@@ -46,28 +43,45 @@ impl Client {
     }
 
     
-    fn send_pk(&mut self) -> Result<(), errors::SendPKError>
+    fn kem(&mut self) -> Result<(), errors::SendPKError>
     {
         Ok(())
     }
 
-    pub fn connect(&mut self, host: String, port: u16) -> Result<(), errors::HandShakeError>
+    pub fn connect(&mut self, host: String) -> Result<(), errors::HandShakeError>
     {
+        let stream = TcpStream::connect(host)
+            .expect("Could not connect to remote host");
+
+        self.stream = Some(stream);
+
+        let buf: &[u8] = b"Hello world!"; 
+
+        let data: &[u8] = &aes::encrypt(&self.cipher, buf).unwrap();
+
+        self.stream.as_mut().unwrap().write_all(data)
+            .expect("Could not send data");
+
         Ok(())
     }
 
-    pub fn send(&mut self, data: &str) -> Result<(), errors::ErrorSendingData>
+    pub fn send(&mut self, buf: &[u8]) -> Result<(), errors::ErrorSendingData>
     {
+        let ebuf: &[u8] = &aes::encrypt(&self.cipher, buf).unwrap();
+
+        self.stream.as_mut().unwrap().write_all(ebuf)
+            .expect("Could not send data");
+
         Ok(())
     }
 
     pub fn receive(&mut self) -> Result<[u8; 64000], errors::ErrorReceivingData>
     {
-        Ok(())
+        Ok([0; 64000])
     }
 }
 
-/*#[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::*; // Import everything from the parent module
 
@@ -77,15 +91,9 @@ mod tests {
             .expect("Could not create");
 
         // Call the connect function
-        client.connect("127.0.0.1".to_owned(), 8000 as u16)
+        client.connect("127.0.0.1:8001".to_owned())
             .expect("Could not stablish a connection");
 
-        let x = client.encrypt_tagless("asd")
-            .expect("Error");
-
-        let y = client.decrypt_tagless(x)
-            .expect("Error2");
-
-        println!("{}", y);
+        client.send(b"Esto es una prueba");
     }
-}*/
+}
