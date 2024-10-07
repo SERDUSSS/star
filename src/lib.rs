@@ -1,6 +1,8 @@
 use ::aes::Aes256;
 use encryption::{aes, kyber1024, hash};
-use std::{io::Write, net::{self, TcpStream}};
+use std::{io::{Read, Write}, net::{self, TcpStream}};
+use std::mem;
+
 pub mod packets;
 pub mod errors;
 
@@ -56,7 +58,7 @@ impl Client {
         self.stream = Some(stream);
 
         self.kem();
-        
+
         Ok(())
     }
 
@@ -84,9 +86,30 @@ impl Client {
         Ok(())
     }
 
-    pub fn receive(&mut self) -> Result<[u8; 64000], errors::ErrorReceivingData>
+    pub fn receive(&mut self) -> Result<Vec<u8>, errors::ErrorReceivingData>
     {
-        Ok([0; 64000])
+        let mut arrbufsize: [u8; mem::size_of::<usize>()] = [0; mem::size_of::<usize>()];
+
+        self.stream.as_mut().unwrap().read_exact(&mut arrbufsize)
+            .expect("Error couldn't read buffer size");
+
+        let bufsize: usize = usize::from_ne_bytes(arrbufsize.try_into().map_err(|_| errors::ErrorReceivingData::ConversionError)?); 
+
+        let mut buf: Vec<u8> = vec![0; bufsize];
+
+        self.stream.as_mut().unwrap().read_exact(&mut buf)
+            .expect("Could not read buffer");
+
+        let mut arrbufhash: [u8; 32] = [0; 32];
+
+        self.stream.as_mut().unwrap().read_exact(&mut arrbufhash)
+            .expect("Error couldn't read buffer hash");
+
+        let bufhash = std::str::from_utf8(&arrbufhash)
+            .expect("Couldn't parse bytes to hash");
+
+
+        Ok(buf)
     }
 }
 
