@@ -53,12 +53,12 @@ impl Client {
     pub fn connect(&mut self, host: String) -> Result<(), errors::HandShakeError>
     {
         let stream = TcpStream::connect(host)
-            .expect("Could not connect to remote host");
+            .expect("Could not connect to peer");
 
         self.stream = Some(stream);
 
         self.kem()
-            .expect("Couldn't create secure channel (OQS KEM Kyber1024)");
+            .expect("Couldn't create secure channel with peer (OQS KEM Kyber1024)");
 
         Ok(())
     }
@@ -72,13 +72,13 @@ impl Client {
         let bufhash: &[u8] = &hash::sha3_256(ebuf);
 
         self.stream.as_mut().unwrap().write_all(buflength)
-            .expect("Could not send data length");
+            .expect("Could not send bugger length to peer");
 
         self.stream.as_mut().unwrap().write_all(ebuf)
-            .expect("Could not send data");
+            .expect("Could not send buffer to peer");
 
         self.stream.as_mut().unwrap().write_all(bufhash)
-            .expect("Could not send hash");
+            .expect("Could not send buffer hash to peer");
 
         // println!("{}", String::from_utf8(aes::decrypt(&self.cipher, ebuf).unwrap()).unwrap());
 
@@ -90,23 +90,23 @@ impl Client {
         let mut arrbufsize: [u8; mem::size_of::<usize>()] = [0; mem::size_of::<usize>()];
 
         self.stream.as_mut().unwrap().read_exact(&mut arrbufsize)
-            .expect("Error couldn't read buffer size");
+            .expect("Couldn't read buffer size from peer");
 
         let bufsize: usize = usize::from_ne_bytes(arrbufsize.try_into()
-            .expect("Error conversing bufsize &[u8] -> usize"));
+            .expect("Couldn't convert bufsize from peer &[u8] -> usize"));
 
         let mut buf: Vec<u8> = vec![0; bufsize];
 
         self.stream.as_mut().unwrap().read_exact(&mut buf)
-            .expect("Could not read buffer");
+            .expect("Couldn't read buffer from peer");
 
         let mut remotearrbufhash: [u8; 32] = [0; 32];
 
         self.stream.as_mut().unwrap().read_exact(&mut remotearrbufhash)
-            .expect("Error couldn't read buffer hash");
+            .expect("Couldn't read buffer hash from peer");
 
         let remotebufhash: &str = std::str::from_utf8(&remotearrbufhash)
-            .expect("Couldn't parse remote bytes to hash");
+            .expect("Couldn't parse bytes to peer buffer hash");
 
         let arrbufhash: Vec<u8> = hash::sha3_256(&buf);
 
@@ -128,10 +128,10 @@ mod tests {
     #[test]
     fn test_connect() -> Result<(), Error> {
         let mut client = Client::new()
-            .expect("Could not create");
+            .expect("Could not create object");
 
         client.connect("127.0.0.1:8001".to_owned())
-            .expect("Could not stablish a connection");
+            .expect("Could not stablish a connection with peer");
 
         let buf: &[u8] = &[0; 1000];
 
