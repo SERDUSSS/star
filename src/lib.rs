@@ -93,7 +93,8 @@ impl Client {
         self.stream.as_mut().unwrap().read_exact(&mut arrbufsize)
             .expect("Error couldn't read buffer size");
 
-        let bufsize: usize = usize::from_ne_bytes(arrbufsize.try_into().map_err(|_| errors::ErrorReceivingData::ConversionError)?); 
+        let bufsize: usize = usize::from_ne_bytes(arrbufsize.try_into()
+            .expect("Error conversing bufsize &[u8] -> usize"));
 
         let mut buf: Vec<u8> = vec![0; bufsize];
 
@@ -115,10 +116,12 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
+    use oqs::Error;
+
     use super::*; // Import everything from the parent module
 
     #[test]
-    fn test_connect() {
+    fn test_connect() -> Result<(), Error> {
         let mut client = Client::new()
             .expect("Could not create");
 
@@ -127,6 +130,9 @@ mod tests {
 
         let buf: &[u8] = &[0; 1000];
 
-        client.send(buf);
+        client.send(buf)
+            .expect("Error test");
+
+        Ok(())
     }
 }

@@ -41,8 +41,8 @@ pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, errors::EncryptE
 }
 
 fn pad(data: &[u8], block_size: usize) -> Vec<u8> {
-    let padding_len = block_size - (data.len() % block_size);
-    let mut padded_data = Vec::with_capacity(data.len() + padding_len);
+    let padding_len: usize = block_size - (data.len() % block_size);
+    let mut padded_data: Vec<u8> = Vec::with_capacity(data.len() + padding_len);
     padded_data.extend_from_slice(data);
     padded_data.extend(vec![padding_len as u8; padding_len]);
     padded_data
