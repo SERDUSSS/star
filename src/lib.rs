@@ -57,7 +57,8 @@ impl Client {
 
         self.stream = Some(stream);
 
-        self.kem();
+        self.kem()
+            .expect("Couldn't create secure channel (OQS KEM Kyber1024)");
 
         Ok(())
     }
