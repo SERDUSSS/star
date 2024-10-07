@@ -19,13 +19,13 @@ pub fn sha3_256_file(filepath: &str) -> Vec<u8>
     let file = File::open(filepath)
         .expect("Couldn't open file to read");
 
-    let mut reader = BufReader::new(file);
+    let mut reader: BufReader<File> = BufReader::new(file);
     
 
     let mut hasher = Sha3_256::new();
     
 
-    let mut buffer = [0u8; 4096];
+    let mut buffer: [u8; 4096] = [0u8; 4096];
 
     loop
     {

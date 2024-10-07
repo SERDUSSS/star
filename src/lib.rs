@@ -79,8 +79,6 @@ impl Client {
         self.stream.as_mut().unwrap().write_all(bufhash)
             .expect("Could not send hash");
 
-        // send hash
-
         // println!("{}", String::from_utf8(aes::decrypt(&self.cipher, ebuf).unwrap()).unwrap());
 
         Ok(())
@@ -101,14 +99,20 @@ impl Client {
         self.stream.as_mut().unwrap().read_exact(&mut buf)
             .expect("Could not read buffer");
 
-        let mut arrbufhash: [u8; 32] = [0; 32];
+        let mut remotearrbufhash: [u8; 32] = [0; 32];
 
-        self.stream.as_mut().unwrap().read_exact(&mut arrbufhash)
+        self.stream.as_mut().unwrap().read_exact(&mut remotearrbufhash)
             .expect("Error couldn't read buffer hash");
 
-        let bufhash = std::str::from_utf8(&arrbufhash)
-            .expect("Couldn't parse bytes to hash");
+        let remotebufhash: &str = std::str::from_utf8(&remotearrbufhash)
+            .expect("Couldn't parse remote bytes to hash");
 
+        let arrbufhash: Vec<u8> = hash::sha3_256(&buf);
+
+        let bufhash: &str = std::str::from_utf8(&arrbufhash)
+            .expect("Could't parse bytes to hash");
+
+        assert_eq!(remotebufhash, bufhash);
 
         Ok(buf)
     }
@@ -118,7 +122,7 @@ impl Client {
 mod tests {
     use oqs::Error;
 
-    use super::*; // Import everything from the parent module
+    use super::*;
 
     #[test]
     fn test_connect() -> Result<(), Error> {
