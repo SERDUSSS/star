@@ -15,9 +15,14 @@ pub mod encryption {
 pub struct Client {
     pub host: String,                      // The remote host
     pub stream: Option<net::TcpStream>,    // TCP stream for communication
-    pub kem_alg: oqs::kem::Kem,            // The KEM algorithm used, Kyber1024
-    pub pk: oqs::kem::PublicKey,           // Public key for post-quantum encryption
-    pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption
+    pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption local -> peer
+    pub cipher: Aes256,                    // AES256 encryption key
+}
+
+pub struct Server {
+    pub host: String,                      // The local host
+    pub stream: Option<net::TcpStream>,    // TCP stream for communication
+    pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption local -> peer
     pub cipher: Aes256,                    // AES256 encryption key
 }
 
@@ -37,8 +42,6 @@ impl Client {
             {
                 host,
                 stream: None,
-                kem_alg,
-                pk,
                 ciphertext,
                 cipher,
             })
@@ -76,7 +79,7 @@ impl Client {
         Ok(())
     }
 
-    pub fn send(&mut self, buf: &[u8]) -> Result<(), errors::ErrorSendingData>
+    pub fn write(&mut self, buf: &[u8]) -> Result<(), errors::ErrorSendingData>
     {
         let ebuf: &[u8] = &aes::encrypt(&self.cipher, buf).unwrap();
 
@@ -98,7 +101,7 @@ impl Client {
         Ok(())
     }
 
-    pub fn receive(&mut self) -> Result<Vec<u8>, errors::ErrorReceivingData>
+    pub fn read(&mut self) -> Result<Vec<u8>, errors::ErrorReceivingData>
     {
         let mut arrbufsize: [u8; mem::size_of::<usize>()] = [0; mem::size_of::<usize>()];
 
@@ -148,7 +151,7 @@ mod tests {
 
         let buf: &[u8] = &[0; 1000];
 
-        client.send(buf)
+        client.write(buf)
             .expect("Error test");
 
         Ok(())
