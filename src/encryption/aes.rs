@@ -25,6 +25,21 @@ pub fn generate_cipher(
     Ok((ciphertext, cipher))
 }
 
+pub fn derive_cipher(
+    kem_alg: &Kem,
+    ska: &SecretKey,
+    ciphertext: &Ciphertext,
+) -> Result<Aes256, oqs::Error> {
+
+    let shared_secret = kem_alg.decapsulate(ska, ciphertext)?;
+
+    let aes_key: GenericArray<u8, _> = GenericArray::clone_from_slice(&shared_secret.as_ref()[..32]);
+
+    let cipher: Aes256 = Aes256::new(&aes_key);
+
+    Ok(cipher)
+}
+
 pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, errors::EncryptError> {
 
     let padded_text: Vec<u8> = pad(text, CHUNK_SIZE);

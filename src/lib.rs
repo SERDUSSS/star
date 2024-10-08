@@ -1,5 +1,5 @@
 use ::aes::Aes256;
-use encryption::{aes, kyber1024, hash};
+use encryption::{aes, hash::sha3_256, kyber1024};
 use std::{io::{Read, Write}, net::{self, TcpStream}};
 use std::mem;
 
@@ -47,6 +47,19 @@ impl Client {
     
     fn kem(&mut self) -> Result<(), errors::SendPKError>
     {
+        let cipherlength: &[u8] = &self.ciphertext.as_ref().len().to_ne_bytes();
+
+        self.stream.as_mut().unwrap().write(cipherlength)
+            .expect("Couldn't send ciphertext length to peer");
+
+        self.stream.as_mut().unwrap().write(self.ciphertext.as_ref())
+            .expect("Couldn't send ciphertext to peer");
+
+        let cipherhash: Vec<u8> = sha3_256(self.ciphertext.as_ref());
+
+        self.stream.as_mut().unwrap().write(&cipherhash)
+            .expect("Couldn't send ciphertext hash to peer");
+
         Ok(())
     }
 
@@ -69,7 +82,7 @@ impl Client {
 
         let buflength: &[u8] = &ebuf.len().to_ne_bytes();
 
-        let bufhash: &[u8] = &hash::sha3_256(ebuf);
+        let bufhash: &[u8] = &sha3_256(ebuf);
 
         self.stream.as_mut().unwrap().write_all(buflength)
             .expect("Could not send bugger length to peer");
@@ -108,7 +121,7 @@ impl Client {
         let remotebufhash: &str = std::str::from_utf8(&remotearrbufhash)
             .expect("Couldn't parse bytes to peer buffer hash");
 
-        let arrbufhash: Vec<u8> = hash::sha3_256(&buf);
+        let arrbufhash: Vec<u8> = sha3_256(&buf);
 
         let bufhash: &str = std::str::from_utf8(&arrbufhash)
             .expect("Could't parse bytes to hash");

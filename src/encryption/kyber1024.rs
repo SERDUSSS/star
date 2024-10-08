@@ -12,6 +12,7 @@ pub fn generate_keys() -> Result<(kem::Kem, oqs::kem::PublicKey, oqs::kem::Secre
 
 pub fn encrypt() -> Result<Vec<u8>>
 {
+
     Ok(vec![0;10])
 }
 
