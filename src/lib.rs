@@ -12,25 +12,15 @@ pub mod encryption {
     pub mod hash;
 }
 
-pub struct Client {
-    pub host: String,                      // The remote host
+pub struct Handler {
     pub stream: Option<net::TcpStream>,    // TCP stream for communication
     pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption local -> peer
     pub cipher: Aes256,                    // AES256 encryption key
 }
 
-pub struct Server {
-    pub host: String,                      // The local host
-    pub stream: Option<net::TcpStream>,    // TCP stream for communication
-    pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption local -> peer
-    pub cipher: Aes256,                    // AES256 encryption key
-}
-
-impl Client {
+impl Handler {
     pub fn new() -> Result<Self, errors::ErrorGeneratingSecureKeys> {
         oqs::init();
-
-        let host: String = "0.0.0.0".to_owned();
 
         let (kem_alg, pk, sk) = kyber1024::generate_keys()
             .expect("Error generating Kyber1024 keypair");
@@ -38,9 +28,8 @@ impl Client {
         let (ciphertext, cipher) = aes::generate_cipher(&kem_alg, &pk, &sk)
             .expect("Error generating AES256 cipher");
 
-        Ok(Client
+        Ok(Handler
             {
-                host,
                 stream: None,
                 ciphertext,
                 cipher,
@@ -143,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_connect() -> Result<(), Error> {
-        let mut client = Client::new()
+        let mut client = Handler::new()
             .expect("Could not create object");
 
         client.connect("127.0.0.1:8001".to_owned())
