@@ -19,6 +19,18 @@ pub enum SendPKError {
 }
 
 #[derive(Error, Debug)]
+pub enum OQSEncryptError {
+    #[error("Error encrypting data with OQS, probably Shared Secret")]
+    OQSEncryptError,
+}
+
+#[derive(Error, Debug)]
+pub enum OQSDecryptError {
+    #[error("Error decrypting data with OQS, probably Shared Secret")]
+    OQSDecryptError,
+}
+
+#[derive(Error, Debug)]
 pub enum HandShakeError {
     #[error("Error stablishing connection to peer")]
     HandShakeError,
