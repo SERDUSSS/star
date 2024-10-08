@@ -9,14 +9,3 @@ pub fn generate_keys() -> Result<(kem::Kem, oqs::kem::PublicKey, oqs::kem::Secre
 
     Ok((kem_alg, pka, ska))
 }
-
-pub fn encrypt() -> Result<Vec<u8>>
-{
-
-    Ok(vec![0;10])
-}
-
-pub fn decrypt() -> Result<Vec<u8>>
-{
-    Ok(vec![0;10])
-}
