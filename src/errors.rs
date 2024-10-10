@@ -65,3 +65,9 @@ pub enum DecryptError {
     #[error("Error while trying to decrypt data")]
     DecryptionError,
 }
+
+#[derive(Error, Debug)]
+pub enum ErrorParsingCiphertext {
+    #[error("Error parsing ciphertext from peer")]
+    ErrorParsingCiphertext,
+}

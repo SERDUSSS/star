@@ -1,7 +1,7 @@
 use generic_array::GenericArray;
 use aes::cipher::{BlockDecrypt, BlockEncrypt, KeyInit};
 use aes::Aes256;
-use oqs::kem::{Ciphertext, Kem, PublicKey, SecretKey, SharedSecret};
+use oqs::kem::{Ciphertext, CiphertextRef, Kem, PublicKey, SecretKey, SharedSecret};
 
 use crate::errors;
 
@@ -98,4 +98,15 @@ fn unpad(data: &mut Vec<u8>) -> Result<(), ()> {
     } else {
         Err(()) // Data is empty, can't unpad
     }
+}
+
+
+pub fn generate_cipher_from_vec(kem_alg: &Kem, vec: Vec<u8>) -> Result<Ciphertext, errors::ErrorParsingCiphertext> {
+
+    let expected_size = kem_alg.length_ciphertext();
+    assert_eq!(vec.len(), expected_size);
+
+    let ciphertext: Ciphertext = Ciphertext {bytes: vec}; // Assuming bytes() returns &[u8]
+
+    Ok(ciphertext)
 }

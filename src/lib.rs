@@ -2,6 +2,7 @@ use ::aes::Aes256;
 use encryption::{aes, hash::sha3_256, kyber1024};
 use std::{io::{Read, Write}, net::{self, TcpStream}};
 use std::mem;
+use oqs::kem::Ciphertext;
 
 pub mod packets;
 pub mod errors;
@@ -14,7 +15,8 @@ pub mod encryption {
 
 pub struct Handler {
     pub stream: Option<net::TcpStream>,    // TCP stream for communication (Handler)
-    pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption local -> peer & back
+    pub kem_alg: oqs::kem::Kem,            // Algorithm used
+    pub ciphertext: Ciphertext,            // Ciphertext for the encryption local -> peer & back
     pub cipher: Aes256,                    // AES256 encryption key (Handler)
 }
 
@@ -31,6 +33,7 @@ impl Handler {
         Ok(Handler
             {
                 stream: None,
+                kem_alg,
                 ciphertext,
                 cipher,
             })
@@ -72,7 +75,7 @@ impl Handler {
 
         let mut remotearrkemhash: [u8; 32] = [0; 32];
 
-        self.stream.as_mut().unwrap().read_exact(&mut remotekembufhash)
+        self.stream.as_mut().unwrap().read_exact(&mut remotearrkemhash)
             .expect("Couldn't read kem hash from peer");
 
         let remotekemhash: &str = std::str::from_utf8(&remotearrkemhash)
@@ -85,7 +88,7 @@ impl Handler {
 
         assert_eq!(remotekemhash, kemhash);
 
-        self.ciphertext = &kem;
+        self.ciphertext = aes::generate_cipher_from_vec(&self.kem_alg, kem).unwrap();
         
         Ok(())
     }
