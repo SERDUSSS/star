@@ -55,6 +55,41 @@ impl Handler {
         Ok(())
     }
 
+    fn read_kem(&mut self) -> Result<(), errors::SendPKError>
+    {
+        let mut arrkemsize: [u8; mem::size_of::<usize>()] = [0; mem::size_of::<usize>()];
+
+        self.stream.as_mut().unwrap().read_exact(&mut arrkemsize)
+            .expect("Couldn't read kem size from peer");
+
+        let kemsize: usize = usize::from_ne_bytes(arrkemsize.try_into()
+            .expect("Couldn't convert kemsize from peer &[u8] -> usize"));
+
+        let mut kem: Vec<u8> = vec![0; kemsize];
+
+        self.stream.as_mut().unwrap().read_exact(&mut kem)
+            .expect("Couldn't read kem from peer");
+
+        let mut remotearrkemhash: [u8; 32] = [0; 32];
+
+        self.stream.as_mut().unwrap().read_exact(&mut remotekembufhash)
+            .expect("Couldn't read kem hash from peer");
+
+        let remotekemhash: &str = std::str::from_utf8(&remotearrkemhash)
+            .expect("Couldn't parse bytes to peer kem hash");
+
+        let arrkemhash: Vec<u8> = sha3_256(&kem);
+
+        let kemhash: &str = std::str::from_utf8(&arrkemhash)
+            .expect("Could't parse bytes to hash");
+
+        assert_eq!(remotekemhash, kemhash);
+
+        self.ciphertext = &kem;
+        
+        Ok(())
+    }
+    
     pub fn connect(&mut self, host: String) -> Result<(), errors::HandShakeError>
     {
         let stream = TcpStream::connect(host)
