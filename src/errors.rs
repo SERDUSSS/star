@@ -13,9 +13,15 @@ pub enum ErrorGeneratingKeyPair {
 }
 
 #[derive(Error, Debug)]
-pub enum SendPKError {
-    #[error("Error sending Public Key to peer")]
-    SendPKError,
+pub enum WritePKError {
+    #[error("Error writing Public Key to peer")]
+    WritePKError,
+}
+
+#[derive(Error, Debug)]
+pub enum ReadPKError {
+    #[error("Error reading Public Key to peer")]
+    ReadPKError,
 }
 
 #[derive(Error, Debug)]
