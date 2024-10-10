@@ -37,7 +37,7 @@ impl Handler {
     }
 
     
-    fn kem(&mut self) -> Result<(), errors::SendPKError>
+    fn write_kem(&mut self) -> Result<(), errors::SendPKError>
     {
         let cipherlength: &[u8] = &self.ciphertext.as_ref().len().to_ne_bytes();
 
@@ -62,7 +62,7 @@ impl Handler {
 
         self.stream = Some(stream);
 
-        self.kem()
+        self.write_kem()
             .expect("Couldn't create secure channel with peer (OQS KEM Kyber1024)");
 
         Ok(())
