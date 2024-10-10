@@ -37,7 +37,7 @@ impl Handler {
     }
 
     
-    fn write_kem(&mut self) -> Result<(), errors::SendPKError>
+    fn write_kem(&mut self) -> Result<(), errors::WritePKError>
     {
         let cipherlength: &[u8] = &self.ciphertext.as_ref().len().to_ne_bytes();
 
@@ -55,7 +55,7 @@ impl Handler {
         Ok(())
     }
 
-    fn read_kem(&mut self) -> Result<(), errors::SendPKError>
+    fn read_kem(&mut self) -> Result<(), errors::ReadPKError>
     {
         let mut arrkemsize: [u8; mem::size_of::<usize>()] = [0; mem::size_of::<usize>()];
 
