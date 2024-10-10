@@ -13,9 +13,9 @@ pub mod encryption {
 }
 
 pub struct Handler {
-    pub stream: Option<net::TcpStream>,    // TCP stream for communication
-    pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption local -> peer
-    pub cipher: Aes256,                    // AES256 encryption key
+    pub stream: Option<net::TcpStream>,    // TCP stream for communication (Handler)
+    pub ciphertext: oqs::kem::Ciphertext,  // Ciphertext for the encryption local -> peer & back
+    pub cipher: Aes256,                    // AES256 encryption key (Handler)
 }
 
 impl Handler {
