@@ -2,7 +2,7 @@ use ::aes::Aes256;
 use encryption::{hash, hybrid};
 use std::{io::{Read, Write}, net::{self, TcpStream}};
 use std::mem;
-use oqs::kem::{Ciphertext, SharedSecret};
+use oqs::kem::{Ciphertext, Kem, SharedSecret};
 
 pub mod packets;
 pub mod errors;
@@ -14,34 +14,32 @@ pub mod encryption {
 
 pub struct Handler {
     pub stream: Option<net::TcpStream>,    // TCP stream for communication (Handler)
-    pub kem_alg: oqs::kem::Kem,            // Algorithm used
-    pub ciphertext: Ciphertext,            // Ciphertext for the encryption local -> peer & back
-    pub cipher: Aes256,                    // AES256 encryption key (Handler)
+    pub kem: oqs::kem::Kem,                // Algorithm used
+    pub ct: Vec<u8>,                       // Ciphertext for the encryption local -> peer & back
+    pub sc: SharedSecret,                  // Shared Secret (KEY)
 }
 
 impl Handler {
     pub fn new() -> Result<Self, errors::ErrorGeneratingSecureKeys> {
         oqs::init();
 
-        let (kem_alg, pk, sk) = encryption::generate_keys()
-            .expect("Error generating Kyber1024 keypair");
+        let kem: Kem = Kem::new(oqs::kem::Algorithm::Kyber1024).unwrap();
 
-        let (ciphertext, cipher) = aes::generate_cipher(&kem_alg, &pk, &sk)
-            .expect("Error generating AES256 cipher");
+        let (ct, sc) = hybrid::key_exchange(&kem).unwrap();
 
         Ok(Handler
             {
                 stream: None,
-                kem_alg,
-                ciphertext,
-                cipher,
+                kem,
+                ct,
+                sc,
             })
     }
 
     
     fn write_kem(&mut self) -> Result<(), errors::WritePKError>
     {
-        let cipherlength: &[u8] = &self.ciphertext.as_ref().len().to_ne_bytes();
+        let cipherlength: &[u8] = &self.ct.as_ref().len().to_ne_bytes();
 
         self.stream.as_mut().unwrap().write(cipherlength)
             .expect("Couldn't send ciphertext length to peer");
