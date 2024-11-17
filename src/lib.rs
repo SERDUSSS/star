@@ -35,7 +35,6 @@ impl Handler {
                 sc,
             })
     }
-
     
     fn write_kem(&mut self) -> Result<(), errors::WritePKError>
     {
