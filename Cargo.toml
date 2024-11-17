@@ -4,11 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-oqs = "*"
-aes = "*"
-generic-array = "*"
-block-modes = "*"
-rand = "*"
-sha3 = "*"
-thiserror = "*"
-pkcs7 = "*"
+oqs = "0.9.0"        # Open Quantum Safe library for post-quantum cryptography
+aes = "0.7"          # AES encryption library
+block-modes = "0.8.1"  # Block cipher modes like CBC
+block-padding = "0.3.3" # PKCS7 padding
+rand = "0.8"         # Random number generation
+sha3 = "0.10.8"
