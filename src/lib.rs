@@ -35,18 +35,18 @@ impl Handler {
                 sc,
             })
     }
-    
-    fn write_kem(&mut self) -> Result<(), errors::WritePKError>
+
+    fn send_key(&mut self) -> Result<(), errors::WritePKError>
     {
-        let cipherlength: &[u8] = &self.ct.as_ref().len().to_ne_bytes();
+        let cipherlength: &[u8] = &self.ct.len().to_ne_bytes();
 
         self.stream.as_mut().unwrap().write(cipherlength)
             .expect("Couldn't send ciphertext length to peer");
 
-        self.stream.as_mut().unwrap().write(self.ciphertext.as_ref())
+        self.stream.as_mut().unwrap().write(self.ct.as_ref())
             .expect("Couldn't send ciphertext to peer");
 
-        let cipherhash: Vec<u8> = hash::sha3_256(self.ciphertext.as_ref());
+        let cipherhash: Vec<u8> = hash::sha3_256(self.ct.as_ref());
 
         self.stream.as_mut().unwrap().write(&cipherhash)
             .expect("Couldn't send ciphertext hash to peer");
@@ -54,37 +54,37 @@ impl Handler {
         Ok(())
     }
 
-    fn read_kem(&mut self) -> Result<(), errors::ReadPKError>
+    fn read_key(&mut self) -> Result<(), errors::ReadPKError>
     {
-        let mut arrkemsize: [u8; mem::size_of::<usize>()] = [0; mem::size_of::<usize>()];
+        let mut arrkeysize: [u8; mem::size_of::<usize>()] = [0; mem::size_of::<usize>()];
 
-        self.stream.as_mut().unwrap().read_exact(&mut arrkemsize)
-            .expect("Couldn't read kem size from peer");
+        self.stream.as_mut().unwrap().read_exact(&mut arrkeysize)
+            .expect("Couldn't read key size from peer");
 
-        let kemsize: usize = usize::from_ne_bytes(arrkemsize.try_into()
-            .expect("Couldn't convert kemsize from peer &[u8] -> usize"));
+        let keysize: usize = usize::from_ne_bytes(arrkeysize.try_into()
+            .expect("Couldn't convert keysize from peer &[u8] -> usize"));
 
-        let mut kem: Vec<u8> = vec![0; kemsize];
+        let mut key: Vec<u8> = vec![0; keysize];
 
-        self.stream.as_mut().unwrap().read_exact(&mut kem)
-            .expect("Couldn't read kem from peer");
+        self.stream.as_mut().unwrap().read_exact(&mut key)
+            .expect("Couldn't read key from peer");
 
-        let mut remotearrkemhash: [u8; 32] = [0; 32];
+        let mut remotearrkeyhash: [u8; 32] = [0; 32];
 
-        self.stream.as_mut().unwrap().read_exact(&mut remotearrkemhash)
-            .expect("Couldn't read kem hash from peer");
+        self.stream.as_mut().unwrap().read_exact(&mut remotearrkeyhash)
+            .expect("Couldn't read key hash from peer");
 
-        let remotekemhash: &str = std::str::from_utf8(&remotearrkemhash)
-            .expect("Couldn't parse bytes to peer kem hash");
+        let remotekeyhash: &str = std::str::from_utf8(&remotearrkeyhash)
+            .expect("Couldn't parse bytes to peer key hash");
 
-        let arrkemhash: Vec<u8> = hash::sha3_256(&kem);
+        let arrkeyhash: Vec<u8> = hash::sha3_256(&key);
 
-        let kemhash: &str = std::str::from_utf8(&arrkemhash)
+        let keyhash: &str = std::str::from_utf8(&arrkeyhash)
             .expect("Could't parse bytes to hash");
 
-        assert_eq!(remotekemhash, kemhash);
+        assert_eq!(remotekeyhash, keyhash);
 
-        self.ciphertext = aes::generate_cipher_from_vec(&self.kem_alg, kem, &self.ciphertext).unwrap();
+        self.kem.decapsulate(&Ciphertext::from_bytes(&key)?, &self.kem.keypair().unwrap().1)?;
         
         Ok(())
     }
@@ -96,7 +96,7 @@ impl Handler {
 
         self.stream = Some(stream);
 
-        self.write_kem()
+        self.send_key()
             .expect("Couldn't create secure channel with peer (OQS KEM Kyber1024)");
 
         Ok(())
