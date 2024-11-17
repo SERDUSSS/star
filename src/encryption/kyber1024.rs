@@ -1,11 +1,14 @@
-use oqs::kem;
+use oqs::kem::{self, SharedSecret};
+use oqs::kem::Kem;
 use oqs::Result;
 
-pub fn generate_keys() -> Result<(kem::Kem, oqs::kem::PublicKey, oqs::kem::SecretKey)>
+pub fn generate_keys(kem: Kem) -> Result<(kem::Kem, oqs::kem::PublicKey, oqs::kem::SecretKey)>
 {
-    let kem_alg: kem::Kem = kem::Kem::new(kem::Algorithm::Kyber1024)?;
+    let (pka, ska) = kem.keypair()?;
 
-    let (pka, ska) = kem_alg.keypair()?;
+    let (ct, sc) = kem.encapsulate(&pka)?;
 
-    Ok((kem_alg, pka, ska))
+    let scb: SharedSecret = kem.decapsulate(&ska, &ct)?;
+
+    Ok((kem, pka, ska))
 }

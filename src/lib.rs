@@ -2,7 +2,7 @@ use ::aes::Aes256;
 use encryption::{aes, hash::sha3_256, kyber1024};
 use std::{io::{Read, Write}, net::{self, TcpStream}};
 use std::mem;
-use oqs::kem::Ciphertext;
+use oqs::kem::{Ciphertext, SharedSecret};
 
 pub mod packets;
 pub mod errors;
@@ -88,7 +88,7 @@ impl Handler {
 
         assert_eq!(remotekemhash, kemhash);
 
-        self.ciphertext = aes::generate_cipher_from_vec(&self.kem_alg, kem).unwrap();
+        self.ciphertext = aes::generate_cipher_from_vec(&self.kem_alg, kem, &self.ciphertext).unwrap();
         
         Ok(())
     }

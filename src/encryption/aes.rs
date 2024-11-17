@@ -1,44 +1,12 @@
 use generic_array::GenericArray;
 use aes::cipher::{BlockDecrypt, BlockEncrypt, KeyInit};
 use aes::Aes256;
-use oqs::kem::{Ciphertext, CiphertextRef, Kem, PublicKey, SecretKey, SharedSecret};
+use oqs::kem::{Ciphertext, Kem, PublicKey, SecretKey, SharedSecret};
+use std::ptr;
 
 use crate::errors;
 
 const CHUNK_SIZE: usize = 16;
-
-pub fn generate_cipher(
-    kem_alg: &Kem,
-    pka: &PublicKey,
-    ska: &SecretKey,
-) -> Result<(Ciphertext, Aes256), oqs::Error> {
-    let (ciphertext, shared_secret) = kem_alg.encapsulate(pka)?;
-
-    let shared_secret_b: SharedSecret = kem_alg.decapsulate(ska, &ciphertext)?;
-
-    assert_eq!(shared_secret, shared_secret_b);
-
-    let aes_key: GenericArray<u8, _> = GenericArray::clone_from_slice(&shared_secret.as_ref()[..32]);
-
-    let cipher: Aes256 = Aes256::new(&aes_key);
-
-    Ok((ciphertext, cipher))
-}
-
-pub fn derive_cipher(
-    kem_alg: &Kem,
-    ska: &SecretKey,
-    ciphertext: &Ciphertext,
-) -> Result<Aes256, oqs::Error> {
-
-    let shared_secret = kem_alg.decapsulate(ska, ciphertext)?;
-
-    let aes_key: GenericArray<u8, _> = GenericArray::clone_from_slice(&shared_secret.as_ref()[..32]);
-
-    let cipher: Aes256 = Aes256::new(&aes_key);
-
-    Ok(cipher)
-}
 
 pub fn encrypt(cipher: &Aes256, text: &[u8]) -> Result<Vec<u8>, errors::EncryptError> {
 
@@ -98,15 +66,4 @@ fn unpad(data: &mut Vec<u8>) -> Result<(), ()> {
     } else {
         Err(()) // Data is empty, can't unpad
     }
-}
-
-
-pub fn generate_cipher_from_vec(kem_alg: &Kem, vec: Vec<u8>) -> Result<Ciphertext, errors::ErrorParsingCiphertext> {
-
-    let expected_size = kem_alg.length_ciphertext();
-    assert_eq!(vec.len(), expected_size);
-
-    let ciphertext: Ciphertext = Ciphertext {bytes: vec}; // Assuming bytes() returns &[u8]
-
-    Ok(ciphertext)
 }
