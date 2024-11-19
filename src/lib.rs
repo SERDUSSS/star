@@ -84,6 +84,8 @@ impl Handler {
 
         assert_eq!(remotekeyhash, keyhash);
 
+        let ciphertext = Ciphertext::new(key)?;
+
         self.kem.decapsulate(&Ciphertext::from_bytes(&key)?, &self.kem.keypair().unwrap().1)?;
         
         Ok(())
