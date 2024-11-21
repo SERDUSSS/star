@@ -49,15 +49,33 @@
 17. Client decapsulates the shared secret (`ss`) using its KEM private key:
     `let a_kem_ss = kemalg.decapsulate(&kem_sk, &kem_ct)?;`
 
-### Phase 3: Communication Using Shared Secret
+### Phase 3: Verifying Shared Secrets
 
-18. Both parties now have the same shared secret (`ss`) and can use it as the key for symmetric encryption (e.g., AES256).
+18. Server generates a sha3_256 hash of his shared secret (`ss`):
+    `let b_ss_hash = sha3_256(b_kem_ss)?;`
 
-    - To encrypt: Use AES256 in GCM/CTR mode for secure communication.
-    - To ensure correctness: Optionally, verify `a_kem_ss == b_kem_ss`.
+19. Server signs the shared secret hash (`b_ss_hash`):
+    `let b_ss_signature = sigalg.sign(b_ss_hash.as_ref(), &b_sig_sk)?;`
 
-### Additional Notes:
-1. Validate all received public keys and signatures immediately to prevent malicious actors from tampering with the protocol.
-2. Use secure randomness for key generation to prevent predictable keys.
-3. Use authenticated encryption (e.g., AES-GCM) for post-exchange communication to ensure integrity and confidentiality.
+20. Server sends `(b_ss_hash, b_ss_signature)`
+
+21. Client verifies shared secret hash signature (`b_ss_hash`):
+    `sigalg.verify(b_ss_hash.as_ref(), &b_ss_signature, &b_sig_pk)?;`
+
+22. Client generates a sha3256 hash of his shared secret (`a_kem_ss`)
+    `let a_ss_hash = sha3_256(a_kem_ss)?;`
+
+23. Client compares both shared secret hashes (`*_ss_hash`):
+    `asserteq!(a_ss_hash, b_ss_hash);`
+
+### Phase 4: Communication Using Shared Secret
+
+24. Both parties now have the same shared secret (`ss`) and can use it as the key for symmetric encryption (e.g., AES256).
+
+
+
+### Additional Notes / TO DO:
+1. Use AES256 in GCM/CTR mode to ensure secure post-exchange communications
+2. in Phase 3 after verifying the signed hash (`b_ss_hash`) it's not a good practice to use `asserteq!` since this migh lead to a DoS attack, it should delete the session properly
+3. Even though as of right now AES256, Dilithium5 and Kyber1024 are hardcoded they should be easily reemplazable and depend on the demand of the communication
 
