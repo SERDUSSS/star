@@ -78,4 +78,10 @@
 1. Use AES256 in GCM/CTR mode to ensure secure post-exchange communications
 2. in Phase 3 after verifying the signed hash (`b_ss_hash`) it's not a good practice to use `asserteq!` since this migh lead to a DoS attack, it should delete the session properly
 3. Even though as of right now AES256, Dilithium5 and Kyber1024 are hardcoded they should be easily reemplazable and depend on the demand of the communication
-
+4. All communications should have a specific timestamp or nonce that will make it imposible to use a replay attack.
+5. MAYBE implement a system of trust where a UUID of the devices can be used to know if they are trusted or need to accept the risk
+6. All keys should be generated using a secure RNG and make sure they are secure
+7. Server should also make sure shared secrets are the same to ensure resilience to key substitution attacks
+8. Every communication should include a UUID or device specific information that allows the receiving party to know it properly comes from the desired device and not from another one using a public key extracted during the key exchange
+9. Use a way to ensure after the first exchange we are communicating with the same device to avoid spoofing or a man-in-the-middle
+10. After the session all keys should be completely erased from memory as soon as possible making sure the kernel uses cycles of the RAM to really erase this memory session and not leaving it as free but really being used.
