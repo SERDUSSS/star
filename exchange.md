@@ -80,8 +80,17 @@
 3. Even though as of right now AES256, Dilithium5 and Kyber1024 are hardcoded they should be easily reemplazable and depend on the demand of the communication
 4. All communications should have a specific timestamp or nonce that will make it imposible to use a replay attack.
 5. MAYBE implement a system of trust where a UUID of the devices can be used to know if they are trusted or need to accept the risk
-6. All keys should be generated using a secure RNG and make sure they are secure
+6. All keys, nonces and cryptographic data should be generated using a secure RNG such as rand::rngs::OsRng (Rust)
 7. Server should also make sure shared secrets are the same to ensure resilience to key substitution attacks
 8. Every communication should include a UUID or device specific information that allows the receiving party to know it properly comes from the desired device and not from another one using a public key extracted during the key exchange
 9. Use a way to ensure after the first exchange we are communicating with the same device to avoid spoofing or a man-in-the-middle
-10. After the session all keys should be completely erased from memory as soon as possible making sure the kernel uses cycles of the RAM to really erase this memory session and not leaving it as free but really being used.
+10. After the session all keys should be completely overwritten & erased from memory use librarys like zeroize (Rust)
+11. Cryptographic operations should use constant time to prevent timing attacks, use librarys like subtle (Rust)
+12. Be aware of side-channel attacks such as timing attacks or power consumption, avoid patterns
+13. Avoid completely leaving traces on Cache registers / Shared caches
+14. Be carefull with resource consumption, even more at the start of the key exchange to avoid DoS
+15. Keep a 0-log policy at every stage, it may cause other security concerns, but will make the protocol even more resilient. If you want to implement some high level security (such as saving a key to make harder DoS attacks) you should do it ONLY in RAM and avoid completely non volatile memory, this information will only last and be relevant until the process dies.
+16. Ensure no Debug Symbols, Debug information or any other compile system data remains on the final binary
+17. Use a global panic handler to ensure all sensitive data is wiped before the process dies
+18. Ensure a minimum level of entropy in `/dev/urandom (Linux)` and `CryptGenRandom (Windows)` and make sure it's a secure RNG
+19. Add version negotiation to ensure always a secure version of this protocol is used
