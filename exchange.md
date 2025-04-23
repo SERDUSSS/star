@@ -72,8 +72,6 @@
 
 24. Both parties now have the same shared secret (`ss`) and can use it as the key for symmetric encryption (e.g., AES256).
 
-
-
 ### Additional Notes / TO DO:
 1. Use AES256 in GCM/CTR mode to ensure secure post-exchange communications
 2. in Phase 3 after verifying the signed hash (`b_ss_hash`) it's not a good practice to use `asserteq!` since this migh lead to a DoS attack, it should delete the session properly
